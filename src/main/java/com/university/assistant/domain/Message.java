@@ -17,7 +17,7 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String role; // "user" или "assistant"
+    private String role;
 
     @Column(columnDefinition = "TEXT")
     private String content;

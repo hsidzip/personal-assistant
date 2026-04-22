@@ -3,8 +3,6 @@ package com.university.assistant.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -31,6 +29,5 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @CreationTimestamp
     private LocalDateTime createdAt;
 }
