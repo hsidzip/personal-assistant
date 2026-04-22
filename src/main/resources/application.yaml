@@ -25,7 +25,7 @@ spring:
     bootstrap-servers: localhost:9092
     consumer:
       group-id: assistant-group
-      auto-offset-reset: earliest
+      auto-offset-reset: earliest 
 
 server:
   port: 8080
@@ -37,5 +37,5 @@ jwt:
 groq:
   api:
     url: https://api.groq.com/openai/v1/chat/completions
-    key: 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
+    key: ${GROQ_API_KEY}
     model: llama3-8b-8192
