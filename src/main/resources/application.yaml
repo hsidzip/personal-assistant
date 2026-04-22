@@ -25,7 +25,7 @@ spring:
     bootstrap-servers: localhost:9092
     consumer:
       group-id: assistant-group
-      auto-offset-reset: earliest 
+      auto-offset-reset: earliest
 
 server:
   port: 8080
