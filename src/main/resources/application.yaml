@@ -37,5 +37,5 @@ jwt:
 groq:
   api:
     url: https://api.groq.com/openai/v1/chat/completions
-    key: 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
+    key: ${GROQ_API_KEY}
     model: llama-3.1-8b-instant
