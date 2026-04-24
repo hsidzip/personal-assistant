@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Personal Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script>
+        // Проверка авторизации ДО загрузки интерфейса
+        if (!localStorage.getItem('jwtToken')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <div id="chat-page">
+        <div class="sidebar">
+            <h3>Personal Assistant</h3>
+            <p style="font-size: 0.8rem; color: #888;">ИИ-ассистент на Spring Boot</p>
+            <button style="width: 100%; padding: 10px; background: #444; border: none; color: #fff; border-radius: 5px; margin-bottom: 20px;">+ Новый разговор</button>
+            <div id="conversation-list"></div>
+            <div style="margin-top: auto; border-top: 1px solid #444; padding-top: 10px;">
+                <p id="user-display">Загрузка...</p>
+                <button id="logout-btn" style="width: 100%; background: #c0392b; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer;">Выйти</button>
+            </div>
+        </div>
+
+        <div class="main-chat">
+            <div class="chat-header">
+                <h2>Диалог</h2>
+                <span style="background: #27ae60; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem;">llama-3.1</span>
+            </div>
+            
+            <div id="chat-messages">
+                <div class="message assistant">
+                    Привет! Я твой персональный ИИ-ассистент. Чем могу помочь?
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="message-input" placeholder="Напишите сообщение..." autocomplete="off">
+                <button id="send-btn">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const userDisplay = document.getElementById('user-display');
+
+        // Отобразить имя пользователя
+        userDisplay.innerText = localStorage.getItem('username') || 'Пользователь';
+
+        // Логика выхода
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.clear(); // Полная очистка
+            window.location.href = 'login.html';
+        });
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: берем токен прямо сейчас
+            const currentToken = localStorage.getItem('jwtToken');
+            
+            if (!message) return;
+            if (!currentToken) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+            const loadingMsg = addMessage('...', 'assistant loading');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentToken // Пробел после Bearer важен!
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                loadingMsg.remove();
+
+                if (response.ok) {
+                    const aiText = await response.text();
+                    addMessage(aiText || "(Пустой ответ от сервера)", 'assistant');
+                } else {
+                    const errorData = await response.text();
+                    console.error("Server error:", errorData);
+                    
+                    if (response.status === 403) {
+                        addMessage('Ошибка 403: Доступ запрещен. Перезаходим...', 'assistant');
+                        setTimeout(() => {
+                            localStorage.removeItem('jwtToken');
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    } else {
+                        addMessage('Ошибка сервера: ' + response.status, 'assistant');
+                    }
+                }
+            } catch (error) {
+                if (loadingMsg) loadingMsg.remove();
+                console.error("Fetch error:", error);
+                addMessage('Ошибка соединения. Проверьте, запущен ли бэкенд.', 'assistant');
+            }
+        }
+
+        function addMessage(text, type) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + type;
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return msgDiv;
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>

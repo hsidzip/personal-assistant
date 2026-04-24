@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация - Personal Assistant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <form class="auth-form" id="register-form">
+            <h2>Регистрация</h2>
+            <input type="text" id="username" placeholder="Логин" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Пароль" required>
+            <button type="submit">Создать аккаунт</button>
+            <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
+            <p id="info-msg" style="color: #27ae60; display: none;"></p>
+            <p id="error-msg" style="color: #e74c3c; display: none;"></p>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const infoMsg = document.getElementById('info-msg');
+            const errorMsg = document.getElementById('error-msg');
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username, 
+                        email, 
+                        password, 
+                        role: 'USER' 
+                    })
+                });
+
+                if (response.ok) {
+                    errorMsg.style.display = 'none';
+                    infoMsg.innerText = 'Регистрация успешна! Перенаправление на вход...';
+                    infoMsg.style.display = 'block';
+                    // Даем пользователю увидеть сообщение перед редиректом
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                } else {
+                    const errorText = await response.text();
+                    console.error("Register error details:", errorText);
+                    infoMsg.style.display = 'none';
+                    errorMsg.innerText = 'Ошибка: ' + (errorText || 'Логин занят или данные неверны');
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                errorMsg.innerText = 'Ошибка соединения с сервером';
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
