@@ -22,11 +22,14 @@ public class ChatController {
     private final ChatService chatService;
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> chat(
+    // Изменили тип значения в Map с String на Object, так как ID — это Long
+    public ResponseEntity<Map<String, Object>> chat(
             @Valid @RequestBody ChatRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        String response = chatService.chat(request, userDetails.getUsername());
-        return ResponseEntity.ok(Map.of("response", response));
+        
+        // Теперь сервис возвращает Map с "response" и "conversationId"
+        Map<String, Object> result = chatService.chat(request, userDetails.getUsername());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/conversations")

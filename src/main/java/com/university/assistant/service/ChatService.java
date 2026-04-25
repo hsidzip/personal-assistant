@@ -8,17 +8,21 @@ import com.university.assistant.repository.ConversationRepository;
 import com.university.assistant.repository.MessageRepository;
 import com.university.assistant.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ChatService {
 
     private final WebClient webClient;
@@ -35,81 +39,78 @@ public class ChatService {
     @Value("${groq.api.model}")
     private String groqModel;
 
-    public String chat(ChatRequest request, String username) {
+    @Transactional
+    public Map<String, Object> chat(ChatRequest request, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // 1. Находим диалог или создаем новый
         Conversation conversation;
         if (request.getConversationId() != null) {
             conversation = conversationRepository.findById(request.getConversationId())
                     .orElseThrow(() -> new RuntimeException("Conversation not found"));
         } else {
             conversation = Conversation.builder()
-                    .title(request.getMessage().substring(0, Math.min(50, request.getMessage().length())))
+                    .title(request.getMessage().substring(0, Math.min(30, request.getMessage().length())) + "...")
                     .user(user)
-                    .createdAt(LocalDateTime.now())
                     .build();
-            conversationRepository.save(conversation);
+            conversation = conversationRepository.save(conversation);
         }
 
+        // 2. Сохраняем текущее сообщение пользователя
         Message userMessage = Message.builder()
                 .role("user")
                 .content(request.getMessage())
                 .conversation(conversation)
-                .createdAt(LocalDateTime.now())
                 .build();
         messageRepository.save(userMessage);
 
-        String aiResponse = callGroqApi(request.getMessage());
+        // 3. Берем историю (последние 15 сообщений для контекста)
+        List<Message> history = messageRepository.findByConversationId(conversation.getId());
+        
+        // 4. Запрос к Groq
+        String aiResponse = callGroqApi(history);
 
+        // 5. Сохраняем ответ ИИ
         Message assistantMessage = Message.builder()
                 .role("assistant")
                 .content(aiResponse)
                 .conversation(conversation)
-                .createdAt(LocalDateTime.now())
                 .build();
         messageRepository.save(assistantMessage);
 
-        return aiResponse;
+        // ВАЖНО: возвращаем и ответ, и ID диалога, чтобы фронтенд его запомнил
+        return Map.of(
+            "response", aiResponse,
+            "conversationId", conversation.getId()
+        );
     }
 
-    private String callGroqApi(String userMessage) {
-        String modelName = groqModel.trim();
+    private String callGroqApi(List<Message> history) {
+        List<Map<String, String>> groqMessages = new ArrayList<>();
+        groqMessages.add(Map.of("role", "system", "content", "You are a helpful personal assistant."));
         
-        System.out.println("DEBUG: Sending request to Groq...");
-        System.out.println("DEBUG: Model: [" + modelName + "]");
-
-        Map<String, Object> requestBody = Map.of(
-            "model", modelName,
-            "messages", List.of(
-                Map.of("role", "system", "content", "You are a helpful personal assistant."),
-                Map.of("role", "user", "content", userMessage)
-            )
-        );
+        groqMessages.addAll(history.stream()
+                .map(m -> Map.of("role", m.getRole(), "content", m.getContent()))
+                .collect(Collectors.toList()));
 
         try {
-            Map response = webClient.post()
+            Map<?, ?> response = webClient.post()
                     .uri(groqUrl)
                     .header("Authorization", "Bearer " + groqKey.trim())
-                    .header("Content-Type", "application/json")
-                    .bodyValue(requestBody)
+                    .bodyValue(Map.of("model", groqModel.trim(), "messages", groqMessages))
                     .retrieve()
-                    // Обработка ошибки 400 для вывода деталей в консоль
-                    .onStatus(status -> status.is4xxClientError(), clientResponse -> 
-                        clientResponse.bodyToMono(String.class).flatMap(errorBody -> {
-                            System.out.println("GROQ ERROR DETAIL: " + errorBody);
-                            return Mono.error(new RuntimeException("Groq API error: " + errorBody));
-                        })
-                    )
                     .bodyToMono(Map.class)
                     .block();
 
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-            return (String) message.get("content");
+            if (response != null && response.containsKey("choices")) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+                return (String) ((Map<String, Object>) choices.get(0).get("message")).get("content");
+            }
+            return "ИИ не смог сформировать ответ.";
         } catch (Exception e) {
-            System.err.println("FATAL: Failed to call Groq API: " + e.getMessage());
-            return "Error: " + e.getMessage();
+            log.error("Groq API error", e);
+            return "Ошибка: " + e.getMessage();
         }
     }
 
