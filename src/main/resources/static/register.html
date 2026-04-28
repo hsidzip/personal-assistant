@@ -2,63 +2,60 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Регистрация - Personal Assistant</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Регистрация | AI Assistant</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1e1e1e; color: #e0e0e0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-card { background: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }
+        h2 { margin-bottom: 1.5rem; color: #27ae60; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #27ae60; border: none; color: white; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; }
+        button:hover { background: #219150; }
+        a { color: #888; text-decoration: none; font-size: 0.8rem; margin-top: 15px; display: block; }
+    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <form class="auth-form" id="register-form">
-            <h2>Регистрация</h2>
-            <input type="text" id="username" placeholder="Логин" required>
-            <input type="email" id="email" placeholder="Email" required>
-            <input type="password" id="password" placeholder="Пароль" required>
-            <button type="submit">Создать аккаунт</button>
-            <p>Уже есть аккаунт? <a href="login.html">Войти</a></p>
-            <p id="info-msg" style="color: #27ae60; display: none;"></p>
-            <p id="error-msg" style="color: #e74c3c; display: none;"></p>
-        </form>
+    <div class="auth-card">
+        <h2>Регистрация</h2>
+        <input type="text" id="username" placeholder="Придумайте логин" required>
+        <input type="email" id="email" placeholder="Введите ваш Email" required> 
+        <input type="password" id="password" placeholder="Придумайте пароль" required>
+        
+        <button onclick="register()">Создать аккаунт</button>
+        <a href="login.html">Уже есть аккаунт? Войти</a>
     </div>
 
     <script>
-        document.getElementById('register-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        async function register() {
             const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value; // Забираем email
             const password = document.getElementById('password').value;
-            const infoMsg = document.getElementById('info-msg');
-            const errorMsg = document.getElementById('error-msg');
+
+            if (!username || !email || !password) {
+                alert("Пожалуйста, заполните все поля");
+                return;
+            }
 
             try {
                 const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username, 
-                        email, 
-                        password, 
-                        role: 'USER' 
-                    })
+                    // Отправляем email вместе с остальными данными
+                    body: JSON.stringify({ username, email, password }) 
                 });
 
                 if (response.ok) {
-                    errorMsg.style.display = 'none';
-                    infoMsg.innerText = 'Регистрация успешна! Перенаправление на вход...';
-                    infoMsg.style.display = 'block';
-                    // Даем пользователю увидеть сообщение перед редиректом
-                    setTimeout(() => window.location.href = 'login.html', 1500);
-                } else {
-                    const errorText = await response.text();
-                    console.error("Register error details:", errorText);
-                    infoMsg.style.display = 'none';
-                    errorMsg.innerText = 'Ошибка: ' + (errorText || 'Логин занят или данные неверны');
-                    errorMsg.style.display = 'block';
+                    alert('Успешно! Теперь войдите.');
+                    window.location.href = 'login.html';
+                } else { 
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error("Server error:", errorData);
+                    alert('Ошибка при регистрации. Проверьте логи сервера.'); 
                 }
-            } catch (error) {
-                console.error("Fetch error:", error);
-                errorMsg.innerText = 'Ошибка соединения с сервером';
-                errorMsg.style.display = 'block';
+            } catch (e) { 
+                console.error("Fetch error:", e);
+                alert('Ошибка сервера'); 
             }
-        });
+        }
     </script>
 </body>
 </html>

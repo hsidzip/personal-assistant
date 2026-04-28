@@ -1,3 +1,4 @@
+/* src/main/resources/static/style.css */
 :root {
     --bg-color: #1e1e1e;
     --sidebar-bg: #2d2d2d;
@@ -10,7 +11,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
@@ -19,7 +20,70 @@ body {
     overflow: hidden;
 }
 
-#chat-page { display: flex; width: 100%; height: 100%; }
+/* Стили для страниц авторизации */
+.auth-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-form {
+    background-color: var(--sidebar-bg);
+    padding: 2rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    width: 300px;
+    text-align: center;
+}
+
+.auth-form h2 {
+    margin-top: 0;
+    color: var(--accent-color);
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 5px;
+    box-sizing: border-box; /* Важно для padding */
+}
+
+.auth-form button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--accent-color);
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.auth-form button:hover {
+    background-color: #357abd;
+}
+
+.auth-form p {
+    font-size: 0.9rem;
+    margin-top: 15px;
+}
+
+.auth-form a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+/* Стили для главной страницы чата */
+#chat-page {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
 
 .sidebar {
     width: 260px;
@@ -30,13 +94,18 @@ body {
     padding: 1rem;
 }
 
-.main-chat { flex: 1; display: flex; flex-direction: column; }
+.main-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 
 .chat-header {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 #chat-messages {
@@ -52,35 +121,43 @@ body {
     max-width: 80%;
     padding: 10px 15px;
     border-radius: 10px;
-    word-wrap: break-word;
+    line-height: 1.4;
+    position: relative;
 }
 
-.message.user { align-self: flex-end; background-color: var(--user-msg-bg); }
-.message.assistant { align-self: flex-start; background-color: var(--ai-msg-bg); }
+.message.user {
+    align-self: flex-end;
+    background-color: var(--user-msg-bg);
+    border-bottom-right-radius: 2px;
+}
 
-/* САЙДБАР */
-#conversation-list {
+.message.assistant {
+    align-self: flex-start;
+    background-color: var(--ai-msg-bg);
+    border-bottom-left-radius: 2px;
+}
+
+.chat-input-area {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 10px;
+}
+
+#message-input {
     flex: 1;
-    overflow-y: auto;
-    margin-top: 10px;
-}
-
-.conversation-item {
-    padding: 12px;
-    margin: 8px 0;
+    padding: 10px;
     background-color: var(--input-bg);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border-left: 3px solid transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 5px;
 }
 
-.conversation-item:hover { background-color: var(--border-color); }
-.conversation-item.active { border-left: 3px solid #27ae60; background-color: var(--border-color); }
-
-.chat-input-area { padding: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
-#message-input { flex: 1; padding: 12px; background-color: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 5px; }
-#send-btn, #logout-btn, #new-chat-btn { padding: 10px 20px; background-color: var(--accent-color); border: none; color: white; border-radius: 5px; cursor: pointer; }
+#send-btn, #logout-btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
