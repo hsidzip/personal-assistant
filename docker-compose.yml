@@ -33,7 +33,7 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       # Показывает SQL логи в терминале, чтобы мы видели, создаются ли таблицы
       - SPRING_JPA_SHOW_SQL=true
-      - GROQ_API_KEY=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
+      - GROQ_API_KEY=YOUR_GROQ_KEY_HERE
 
 volumes:
   db_data:
